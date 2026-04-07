@@ -159,3 +159,47 @@ def process_without_gb(img):
     borders.append(sup_border)
     return r_img,borders,(mask*255).astype(np.uint8)
 
+# Added to crop instead of doing black padding
+def crop_center_square(img, center, size):
+    #Crop a square of given size centered at center.
+
+    h, w = img.shape[:2]
+    half = size // 2
+
+    cy, cx = int(center[0]), int(center[1])
+
+    y1 = max(0, cy - half)
+    y2 = min(h, cy + half)
+    x1 = max(0, cx - half)
+    x2 = min(w, cx + half)
+
+    cropped = img[y1:y2, x1:x2, ...]
+    return cropped, (y1, y2, x1, x2)
+
+def process_without_gb_with_center_crop(img):
+    # preprocess images
+    #   img : origin image
+    # return:
+    #   result_img: preprocessed image
+    #   borders: remove border, supplement mask
+    #   mask: mask for preprocessed image
+    borders = []
+
+    mask, bbox, center, radius = get_mask(img)
+    r_img = mask_image(img, mask)
+
+    # 🔹 NEW: crop central square instead of bbox-based crop
+    crop_size = int(2 * radius)
+    r_img, crop_border = crop_center_square(r_img, center, crop_size)
+    mask, _ = crop_center_square(mask, center, crop_size)
+
+    borders.append(crop_border)
+
+    # Keep square shape (optional if crop already square enough)
+    r_img, sup_border = supplemental_black_area(r_img)
+    mask, _ = supplemental_black_area(mask, border=sup_border)
+
+    borders.append(sup_border)
+
+    return r_img, borders, (mask * 255).astype(np.uint8)
+
